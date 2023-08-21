@@ -11,7 +11,7 @@ export function templateConfirmAccont(data) {
     color: rgba(0, 0, 0, 0.671);
   "
 >
-  <h3 style="color: black; font-size: 25px;">Hola ${data.name} ${data.lastname} </h3>
+  <h3 style="color: black; font-size: 25px;">Hola ${data.name} </h3>
   <p style="margin-top: 50px; margin-bottom: 30px;font-size: 18px;">
     Para confirmar tu cuenta debes de dar click en el botón de abajo.
   </p>

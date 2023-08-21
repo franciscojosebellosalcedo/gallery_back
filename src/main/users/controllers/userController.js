@@ -1,8 +1,8 @@
 import {
   createAuth,
+  findAuthUserByEmail,
   findAuthUserById,
 } from "../../auth/controllers/authController.js";
-import { pool } from "../../../config/db.js";
 import dotenv from "dotenv";
 import {
   validationEmail,
@@ -12,9 +12,11 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { sendEmailUser } from "../../../config/mailer.js";
 import { templateConfirmAccont } from "../../../utils/templatesSendEmail.js";
+import { saveAlbum } from "../../albums/controllers/albumController.js";
+import { saveImage } from "../../imagens/controllers/imageController.js";
+import { User } from "../model/userModel.js";
 
 dotenv.config();
-
 
 export async function createUser(req, res) {
   try {
@@ -24,49 +26,64 @@ export async function createUser(req, res) {
         .status(responseValidationData.code)
         .json({ ...responseValidationData });
     }
-    const sqlFindRegister = "select * from auth where email= ?";
-    const [resul] = await pool.query(sqlFindRegister, [req.body.email]);
-    if (resul.length === 0) {
-      const sqlInsertNewUser =
-        "insert into  users (name,lastname,phone,sexo) values (?,?,?,?)";
-      const [resulInsertUser] = await pool.query(sqlInsertNewUser, [
-        req.body.name,
-        req.body.lastname,
-        req.body.phone,
-        req.body.sexo,
-      ]);
-      if (resulInsertUser.affectedRows > 0) {
-        const id_user = resulInsertUser.insertId;
+    const responseFindAuth = await findAuthUserByEmail(req.body.email);
+    if (!responseFindAuth) {
+      const responseCreatedUser = await User.create({
+        name: req.body.name,
+      });
+      if (responseCreatedUser) {
+        const id_user = responseCreatedUser.id;
         const password = await bcrypt.hash(req.body.password, 8);
         const email = req.body.email;
         const userFound = await findUserById(id_user);
         const token_confirmed = jwt.sign(
-          { ...userFound },
+          {
+            id: userFound.id,
+            name: userFound.name,
+            created_at: userFound.created_at,
+            status: userFound.status,
+          },
           process.env.SECRET_JWT,
           { algorithm: "HS256" }
         );
-
         const dataAuth = { password, id_user, email, token_confirmed };
-        const responseInsertAuth = await createAuth(dataAuth);
-        if (responseInsertAuth.affectedRows > 0) {
-          const authFound = await findAuthUserById(responseInsertAuth.insertId);
-          const dataSendEmail = {
-            link: "#",
-            name: userFound.name,
-            lastname: userFound.lastname,
+        const responseCreatedAuth = await createAuth(dataAuth);
+        if (responseCreatedAuth) {
+          const dataInsertAlbum = {
+            id_user: id_user,
+            name: "perfil",
+            description: "perfil",
           };
-
-          await sendEmailUser(
-            authFound.email,
-            "Confirmación de cuenta",
-            "",
-            templateConfirmAccont(dataSendEmail)
-          );
-          return res.status(201).json({
-            code: 201,
-            message: "Usuario creado exitosamente.",
-            response: true,
-          });
+          const responseCreatedAlbum = await saveAlbum(dataInsertAlbum);
+          if (responseCreatedAlbum) {
+            const dataCreateImage = {
+              id_album: responseCreatedAlbum.id,
+              type: "avatar usuario",
+              string_base: req.body.string_base,
+              title: "avatar usuario",
+            };
+            const responseInsertImage = await saveImage(dataCreateImage);
+            if (responseInsertImage === true) {
+              const authFound = await findAuthUserById(responseCreatedAuth.id);
+              const dataSendEmail = {
+                link: `http://localhost:3000/confirmar-cuenta/${authFound.token_confirmed}`,
+                name: userFound.name,
+              };
+              setTimeout(async () => {
+                await sendEmailUser(
+                  authFound.email,
+                  "Confirmación de cuenta",
+                  "",
+                  templateConfirmAccont(dataSendEmail)
+                );
+              }, 0);
+              return res.status(201).json({
+                code: 201,
+                message: "Usuario creado exitosamente.",
+                response: true,
+              });
+            }
+          }
         } else {
           return res.status(400).json({
             code: 400,
@@ -94,13 +111,15 @@ export async function createUser(req, res) {
 
 export async function findUserById(idUser) {
   try {
-    const sqlFindUser = "select * from users where id=?";
-    const [result] = await pool.query(sqlFindUser, [idUser]);
-    if (!result[0]) {
+    const responseFindUserById = await User.findOne({
+      where: { id: idUser },
+    });
+    if (!responseFindUserById) {
       return null;
     }
-    return result[0];
+    return responseFindUserById;
   } catch (error) {
+    console.log(error)
     return null;
   }
 }
@@ -122,24 +141,6 @@ export function validateData(body) {
     return {
       code: 400,
       message: "Ingrese su nombre por favor.",
-      response: false,
-    };
-  } else if (!body.lastname || body.lastname === "" || body.lastname === null) {
-    return {
-      code: 400,
-      message: "Ingrese su apellido por favor.",
-      response: false,
-    };
-  } else if (!body.phone || body.phone === "" || body.phone === null) {
-    return {
-      code: 400,
-      message: "Ingrese su número de teléfono por favor.",
-      response: false,
-    };
-  } else if (!body.sexo || body.sexo === "" || body.sexo === null) {
-    return {
-      code: 400,
-      message: "Seleccione su sexo por favor.",
       response: false,
     };
   } else if (validationPassword(body.password) === false) {

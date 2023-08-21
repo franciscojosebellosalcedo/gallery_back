@@ -8,3 +8,4 @@ export function validationPassword (password) {
   return regex.test(password);
 };
 
+
