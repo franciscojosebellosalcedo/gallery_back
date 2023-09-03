@@ -13,7 +13,7 @@ export const PartImage=sequelize.define("part_image",{
       type:DataTypes.INTEGER
     },
     part:{
-      type:DataTypes.TEXT,
+      type:DataTypes.TEXT("long"),
       allowNull:false
     },
     status:{

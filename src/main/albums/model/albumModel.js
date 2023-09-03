@@ -20,6 +20,12 @@ export const Album = sequelize.define("album", {
     type:DataTypes.STRING,
     allowNull: false
   },
+  is_recicled:{
+    type:DataTypes.BOOLEAN,
+    allowNull:true,
+    defaultValue:false
+  }
+  ,
   created_at:{
     type : DataTypes.DATE,
     defaultValue:sequelize.literal("CURRENT_TIMESTAMP"),

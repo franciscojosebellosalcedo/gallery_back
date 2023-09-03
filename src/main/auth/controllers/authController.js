@@ -276,18 +276,14 @@ export async function confirmAccontUser(req, res) {
 
 async function updateIsConfirmedInAuth(idAuth) {
   try {
-    const sqlUpdateIsConfirmed = `update auth set isConfirmed=${1}, token_confirmed=""  where id=?`;
-    const [result] = await pool.query(sqlUpdateIsConfirmed, [idAuth]);
     const responseUpdateToken=await Auth.update({
       isConfirmed:1,
       token_confirmed:""
     },{where:{id:idAuth}});
-    
-    if(!responseUpdateToken){
+    if(responseUpdateToken[0]!==1){
       return false;
     }
-    return responseUpdateToken;
-    return false;
+    return true;
   } catch (error) {
     console.log(error);
     return false;
