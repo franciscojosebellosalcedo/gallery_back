@@ -40,5 +40,4 @@ async function main() {
     console.log(error.message);
   }
 }
-
 main();

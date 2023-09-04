@@ -134,7 +134,7 @@ export async function login(req, res) {
         response: false,
       });
     }
-    if (authFound.isConfirmed === 0) {
+    if (authFound.isConfirmed === false) {
       return res.status(400).json({
         code: 400,
         message: "Por favor confirme su cuenta.",
@@ -182,7 +182,7 @@ export async function login(req, res) {
         response: false,
       });
     }
-    const user={name:userFound.name,created_at:userFound.created_at,status:userFound.status,imageBase64};
+    const user={id:userFound.id,name:userFound.name,created_at:userFound.created_at,status:userFound.status,imageBase64};
     return res.status(200).json({
       code: 200,
       message: "Credenciales validas.",
@@ -224,6 +224,7 @@ export async function createAuth(payload) {
 export async function confirmAccontUser(req, res) {
   try {
     const verifiToken = jwt.verify(req.params.token, process.env.SECRET_JWT);
+    
     if (!verifiToken) {
       return res.status(404).json({
         code: 404,
@@ -234,7 +235,7 @@ export async function confirmAccontUser(req, res) {
     const authFoundConfirm = await findAuthUserByIdUser(verifiToken.id);
     const userFound = await findUserById(verifiToken.id);
     if (authFoundConfirm) {
-      if (authFoundConfirm.isConfirmed > 0) {
+      if (authFoundConfirm.isConfirmed ===true) {
         return res.status(200).json({
           code: 200,
           message: `Hola ${userFound.name} tu cuenta ya fue confirmada.`,
@@ -242,6 +243,7 @@ export async function confirmAccontUser(req, res) {
         });
       }
     }
+
     const authFound = await findAuthUserByTokenConfirm(req.params.token);
     if (!authFound) {
       return res.status(404).json({
@@ -274,10 +276,10 @@ export async function confirmAccontUser(req, res) {
   }
 }
 
-async function updateIsConfirmedInAuth(idAuth) {
+export async function updateIsConfirmedInAuth(idAuth) {
   try {
     const responseUpdateToken=await Auth.update({
-      isConfirmed:1,
+      isConfirmed:true,
       token_confirmed:""
     },{where:{id:idAuth}});
     if(responseUpdateToken[0]!==1){
@@ -290,7 +292,7 @@ async function updateIsConfirmedInAuth(idAuth) {
   }
 }
 
-async function findAuthUserByTokenConfirm(tokenConfirm) {
+export async function findAuthUserByTokenConfirm(tokenConfirm) {
   try {
     const responseFindAuthByIdTokenConfirmed=await Auth.findOne({
       where:{token_confirmed:tokenConfirm}
@@ -338,7 +340,7 @@ export async function findAuthUserById(idAuth) {
 export async function findAuthUserByEmail(email) {
   try {
     const responseFindAuthByEmail=await Auth.findOne({
-      where:{email:email}
+      where:{email}
     });
     if(!responseFindAuthByEmail){
       return null;
