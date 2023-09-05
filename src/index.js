@@ -29,10 +29,6 @@ app.use(authRouter);
 app.use(imageRouter);
 app.use(albumRouter);
 
-app.get("/",(req,res)=>{
-  res.send("bienvenido a mi aplicacion")
-})
-
 async function main() {
   try {
     await sequelize.sync();
