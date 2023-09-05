@@ -5,7 +5,8 @@
   "description": "Código del back (parte lógica de la aplicación) de la aplicación ## Tecnologias: - Node js - Express - Jwt - Bcrypt - Multer - Js",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "start":"node src/index.js"
   },
   "repository": {
     "type": "git",
